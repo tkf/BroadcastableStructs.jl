@@ -30,8 +30,4 @@ call(f, args...) = f(args...)
 @inline Broadcast.broadcasted(c::BroadcastableCallable, args...) =
     Broadcast.broadcasted(call, c, args...)
 
-@adjoint fieldvalues(obj::T) where T = fieldvalues(obj), function(v)
-    (NamedTuple{fieldnames(T)}(v),)
-end
-
 end # module
