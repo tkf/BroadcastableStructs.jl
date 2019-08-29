@@ -5,6 +5,9 @@ export BroadcastableStruct, BroadcastableCallable
 using Setfield: constructor_of
 using ZygoteRules: @adjoint
 
+@inline foldlargs(op, x) = x
+@inline foldlargs(op, x1, x2, xs...) = foldlargs(op, op(x1, x2), xs...)
+
 abstract type BroadcastableStruct end
 
 fieldvalues(obj) = ntuple(i -> getfield(obj, i), fieldcount(typeof(obj)))
@@ -25,10 +28,21 @@ Base.getindex(obj::BroadcastableStruct, i::Int...) =
 
 abstract type BroadcastableCallable <: BroadcastableStruct end
 
-call(f, args...) = f(args...)
-
 @inline Broadcast.broadcasted(c::BroadcastableCallable, args...) =
-    Broadcast.broadcasted(call, c, args...)
+    Broadcast.broadcasted(calling(c), fieldvalues(c)..., args...)
+
+# Manually flatten broadcast to avoid unbroadcast MethodError:
+# https://github.com/FluxML/Zygote.jl/issues/313
+calling(::T) where T = @inline function(allargs...)
+    fields, args = foldlargs(((), (), 1), allargs...) do (fields, args, i), x
+        if i <= fieldcount(T)
+            ((fields..., x), args, i + 1)
+        else
+            (fields, (args..., x), i + 1)
+        end
+    end
+    return constructor_of(T)(fields...)(args...)
+end
 
 @adjoint fieldvalues(obj::T) where T = fieldvalues(obj), function(v)
     (NamedTuple{fieldnames(T)}(v),)
