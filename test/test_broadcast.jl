@@ -1,14 +1,6 @@
 module TestBroadcast
 
-using BroadcastableStructs
-using Test
-
-struct WeightedAdd{A, B} <: BroadcastableCallable
-    a::A
-    b::B
-end
-
-(f::WeightedAdd)(x, y) = f.a * x + f.b * y
+include("preamble.jl")
 
 f0 = WeightedAdd(1, 2)
 f1 = WeightedAdd([1, 10], 2)
