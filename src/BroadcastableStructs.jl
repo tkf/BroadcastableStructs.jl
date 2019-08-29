@@ -31,14 +31,17 @@ abstract type BroadcastableCallable <: BroadcastableStruct end
 @inline Broadcast.broadcasted(c::BroadcastableCallable, args...) =
     Broadcast.broadcasted(calling(c), fieldvalues(c)..., args...)
 
+@inline leq(::Val{i}, n) where i = i <= n
+@inline inc(::Val{i}) where i = Val(i + 1)
+
 # Manually flatten broadcast to avoid unbroadcast MethodError:
 # https://github.com/FluxML/Zygote.jl/issues/313
 calling(::T) where T = @inline function(allargs...)
-    fields, args = foldlargs(((), (), 1), allargs...) do (fields, args, i), x
-        if i <= fieldcount(T)
-            ((fields..., x), args, i + 1)
+    fields, args = foldlargs(((), (), Val(1)), allargs...) do (fields, args, i), x
+        if leq(i, fieldcount(T))
+            ((fields..., x), args, inc(i))
         else
-            (fields, (args..., x), i + 1)
+            (fields, (args..., x), inc(i))
         end
     end
     return constructor_of(T)(fields...)(args...)
