@@ -1,0 +1,13 @@
+name = "BroadcastableStructs"
+uuid = "69bbf4a4-23d0-4da4-b4ea-97dbcb735a40"
+authors = ["Takafumi Arakaki <aka.tkf@gmail.com>"]
+version = "0.1.0"
+
+[compat]
+julia = "1.2"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
