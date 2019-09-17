@@ -10,7 +10,7 @@ using ZygoteRules: @adjoint
 
 abstract type BroadcastableStruct end
 
-fieldvalues(obj) = ntuple(i -> getfield(obj, i), fieldcount(typeof(obj)))
+fieldvalues(obj) = ntuple(i -> getfield(obj, i), nfields(obj))
 
 Broadcast.broadcastable(obj::BroadcastableStruct) =
     Broadcast.broadcasted(constructor_of(typeof(obj)), fieldvalues(obj)...)
@@ -36,9 +36,9 @@ abstract type BroadcastableCallable <: BroadcastableStruct end
 
 # Manually flatten broadcast to avoid unbroadcast MethodError:
 # https://github.com/FluxML/Zygote.jl/issues/313
-calling(::T) where T = @inline function(allargs...)
+calling(obj::T) where T = @inline function(allargs...)
     fields, args = foldlargs(((), (), Val(1)), allargs...) do (fields, args, i), x
-        if leq(i, fieldcount(T))
+        if leq(i, nfields(obj))
             ((fields..., x), args, inc(i))
         else
             (fields, (args..., x), inc(i))
