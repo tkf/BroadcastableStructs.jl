@@ -8,6 +8,8 @@ using ZygoteRules: @adjoint
 @inline foldlargs(op, x) = x
 @inline foldlargs(op, x1, x2, xs...) = foldlargs(op, op(x1, x2), xs...)
 
+@generated __fieldnames(obj) = fieldnames(obj::Type)  # danger zone
+
 abstract type BroadcastableStruct end
 
 fieldvalues(obj) = ntuple(i -> getfield(obj, i), nfields(obj))
@@ -48,7 +50,7 @@ calling(obj::T) where T = @inline function(allargs...)
 end
 
 @adjoint fieldvalues(obj::T) where T = fieldvalues(obj), function(v)
-    (NamedTuple{fieldnames(T)}(v),)
+    (NamedTuple{__fieldnames(obj)}(v),)
 end
 
 end # module
