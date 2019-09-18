@@ -34,16 +34,19 @@ abstract type BroadcastableCallable <: BroadcastableStruct end
 @inline leq(::Val{i}, n) where i = i <= n
 @inline inc(::Val{i}) where i = Val(i + 1)
 
-# Manually flatten broadcast to avoid unbroadcast MethodError:
-# https://github.com/FluxML/Zygote.jl/issues/313
-calling(obj::T) where T = @inline function(allargs...)
-    fields, args = foldlargs(((), (), Val(1)), allargs...) do (fields, args, i), x
+@inline splitargsfor(obj::T, allargs...) where T =
+    foldlargs(((), (), Val(1)), allargs...) do (fields, args, i), x
         if leq(i, nfields(obj))
             ((fields..., x), args, inc(i))
         else
             (fields, (args..., x), inc(i))
         end
     end
+
+# Manually flatten broadcast to avoid unbroadcast MethodError:
+# https://github.com/FluxML/Zygote.jl/issues/313
+calling(obj::T) where T = @inline function(allargs...)
+    fields, args = splitargsfor(obj, allargs...)
     return constructor_of(T)(fields...)(args...)
 end
 
