@@ -2,7 +2,6 @@ module BroadcastableStructs
 
 export BroadcastableStruct, BroadcastableCallable
 
-using Base.Broadcast: broadcastable, broadcasted
 using Setfield: constructor_of
 using ZygoteRules: @adjoint
 
@@ -30,11 +29,7 @@ Base.getindex(obj::BroadcastableStruct, i::Int...) =
 abstract type BroadcastableCallable <: BroadcastableStruct end
 
 @inline Broadcast.broadcasted(c::BroadcastableCallable, args...) =
-    broadcasted(
-        calling(c),
-        map(broadcastable, fieldvalues(c))...,
-        map(broadcastable, args)...,
-    )
+    Broadcast.broadcasted(calling(c), fieldvalues(c)..., args...)
 
 @inline leq(::Val{i}, n) where i = i <= n
 @inline inc(::Val{i}) where i = Val(i + 1)
