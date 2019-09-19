@@ -9,7 +9,7 @@ makedocs(;
     repo="https://github.com/tkf/BroadcastableStructs.jl/blob/{commit}{path}#L{line}",
     sitename="BroadcastableStructs.jl",
     authors="Takafumi Arakaki <aka.tkf@gmail.com>",
-    assets=String[],
+    strict=v"1.2" <= VERSION < v"1.3",
 )
 
 deploydocs(;
