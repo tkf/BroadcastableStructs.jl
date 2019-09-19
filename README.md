@@ -35,7 +35,7 @@ Point2D{Int64,Int64}(5, 6)
 
 julia> dist.(p, q)
 2-element Array{Int64,1}:
- 7
+ 5
  5
 ```
 
