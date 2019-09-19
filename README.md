@@ -10,7 +10,7 @@ BroadcastableStructs.jl provides an easy way to create a `struct`
 which can be broadcasted as an argument (`BroadcastableStruct`) and
 also as a callable (`BroadcastableCallable`).  `BroadcastableCallable`
 supports efficient differentiation with
-[Zygote.jl](https://github.com/FluxML/Zygote.jl) when using
+[Zygote.jl](https://github.com/FluxML/Zygote.jl) when combined with
 [ChainCutters.jl](https://github.com/tkf/ChainCutters.jl).
 
 `BroadcastableStruct` is an efficient way to treat struct-of-arrays as
