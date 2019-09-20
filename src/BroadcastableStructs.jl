@@ -35,25 +35,36 @@ Base.getindex(obj::BroadcastableStruct, i::Int...) =
 abstract type BroadcastableCallable <: BroadcastableStruct end
 
 @inline Broadcast.broadcasted(c::BroadcastableCallable, args...) =
-    Broadcast.broadcasted(calling(c), fieldvalues(c)..., args...)
+    Broadcast.broadcasted(calling(c), deconstruct(c)..., args...)
 
-@inline leq(::Val{i}, n) where i = i <= n
-@inline inc(::Val{i}) where i = Val(i + 1)
-
-@inline splitargsfor(obj::T, allargs...) where T =
-    foldlargs(((), (), Val(1)), allargs...) do (fields, args, i), x
-        if leq(i, nfields(obj))
-            ((fields..., x), args, inc(i))
+@inline deconstruct(obj::T) where T =
+    foldlargs((), fieldvalues(obj)...) do fields, x
+        if x isa BroadcastableStruct
+            (fields..., deconstruct(x)...)
         else
-            (fields, (args..., x), inc(i))
+            (fields..., x)
         end
     end
+
+@inline _reconstruct(::T, fields) where T = constructor_of(T)(fields...)
+
+@inline function reconstruct(f, obj::T, allargs...) where T
+    fields, args = foldlargs(((), allargs), fieldvalues(obj)...) do (fields, allargs), x
+        if x isa BroadcastableStruct
+            y, rest = reconstruct(f, x, allargs...)
+            ((fields..., y), rest)
+        else
+            ((fields..., allargs[1]), Base.tail(allargs))
+        end
+    end
+    return f(obj, fields), args
+end
 
 # Manually flatten broadcast to avoid unbroadcast MethodError:
 # https://github.com/FluxML/Zygote.jl/issues/313
 calling(obj::T) where T = @inline function(allargs...)
-    fields, args = splitargsfor(obj, allargs...)
-    return constructor_of(T)(fields...)(args...)
+    f, args = reconstruct(_reconstruct, obj, allargs...)
+    return f(args...)
 end
 
 @adjoint fieldvalues(obj::T) where T = fieldvalues(obj), function(v)
