@@ -8,8 +8,14 @@ end BroadcastableStructs
 
 export BroadcastableStruct, BroadcastableCallable
 
-using Setfield: constructor_of
+import Setfield
 using ZygoteRules: @adjoint
+
+const constructorof = try
+    Setfield.constructorof
+catch
+    Setfield.constructor_of
+end
 
 @inline foldlargs(op, x) = x
 @inline foldlargs(op, x1, x2, xs...) = foldlargs(op, op(x1, x2), xs...)
@@ -19,7 +25,7 @@ abstract type BroadcastableStruct end
 fieldvalues(obj) = ntuple(i -> getfield(obj, i), nfields(obj))
 
 Broadcast.broadcastable(obj::BroadcastableStruct) =
-    Broadcast.broadcasted(constructor_of(typeof(obj)), fieldvalues(obj)...)
+    Broadcast.broadcasted(constructorof(typeof(obj)), fieldvalues(obj)...)
 
 Base.ndims(T::Type{<:BroadcastableStruct}) =
     mapreduce(ndims, max, fieldtypes(T); init=0)
@@ -46,7 +52,7 @@ abstract type BroadcastableCallable <: BroadcastableStruct end
         end
     end
 
-@inline _reconstruct(::T, fields) where T = constructor_of(T)(fields...)
+@inline _reconstruct(::T, fields) where T = constructorof(T)(fields...)
 
 @inline function reconstruct(f, obj::T, allargs...) where T
     fields, args = foldlargs(((), allargs), fieldvalues(obj)...) do (fields, allargs), x
