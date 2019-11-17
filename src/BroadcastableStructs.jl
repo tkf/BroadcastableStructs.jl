@@ -19,6 +19,20 @@ end
 
 @inline foldlargs(op, x) = x
 @inline foldlargs(op, x1, x2, xs...) = foldlargs(op, op(x1, x2), xs...)
+# Unroll by hand (optimization):
+@inline foldlargs(op, x1, x2) = op(x1, x2)
+@inline foldlargs(op, x1, x2, x3) = op(op(x1, x2), x3)
+@inline foldlargs(op, x1, x2, x3, x4) = op(op(op(x1, x2), x3), x4)
+@inline foldlargs(op, x1, x2, x3, x4, x5) = op(op(op(op(x1, x2), x3), x4), x5)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6) = op(op(op(op(op(x1, x2), x3), x4), x5), x6)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7) =
+    op(op(op(op(op(op(x1, x2), x3), x4), x5), x6), x7)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7, x8) =
+    op(op(op(op(op(op(op(x1, x2), x3), x4), x5), x6), x7), x8)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7, x8, x9) =
+    op(op(op(op(op(op(op(op(x1, x2), x3), x4), x5), x6), x7), x8), x9)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) =
+    op(op(op(op(op(op(op(op(op(x1, x2), x3), x4), x5), x6), x7), x8), x9), x10)
 
 abstract type BroadcastableStruct end
 
