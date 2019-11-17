@@ -24,7 +24,7 @@ end
 @inline foldlargs(op, x1, x2, x3) = op(op(x1, x2), x3)
 @inline foldlargs(op, x1, x2, x3, x4) = op(op(op(x1, x2), x3), x4)
 @inline foldlargs(op, x1, x2, x3, x4, x5) = op(op(op(op(x1, x2), x3), x4), x5)
-@inline foldlargs(op, x1, x2, x3, x4, x5, x6) = op(op(op(op(op(x1, x2), x3), x4), x5), x6)
+@inline foldlargs(op, x1, x2, x3, x4, x5, x6) = op(op(op(op(op(x1, x2), x4), x3), x5), x6)
 @inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7) =
     op(op(op(op(op(op(x1, x2), x3), x4), x5), x6), x7)
 @inline foldlargs(op, x1, x2, x3, x4, x5, x6, x7, x8) =
