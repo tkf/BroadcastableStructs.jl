@@ -66,26 +66,48 @@ abstract type BroadcastableCallable <: BroadcastableStruct end
         end
     end
 
-@inline _reconstruct(::T, fields) where T = constructorof(T)(fields...)
+struct StructSchema{Constructor, Fields} end
+StructSchema(::Type{Constructor}, Fields::Tuple) where {Constructor} =
+    StructSchema{Constructor, Fields}()
 
-@inline function reconstruct(f, obj::T, allargs...) where T
-    fields, args = foldlargs(((), allargs), fieldvalues(obj)...) do (fields, allargs), x
+# Build a type-level tree reflecting the field locations of
+# `BroadcastableStruct`s.
+@inline function _structschema(obj::Constructor) where {Constructor}
+    fields = foldlargs((), fieldvalues(obj)...) do fields, x
         if x isa BroadcastableStruct
+            (fields..., _structschema(x))
+        else
+            (fields..., nothing)
+        end
+    end
+    return StructSchema(Constructor, fields)
+end
+
+@inline _reconstruct(::Type{T}, fields) where T = constructorof(T)(fields...)
+
+@inline function reconstruct(f::F, ::StructSchema{Constructor, Fields}, allargs...) where {F, Constructor, Fields}
+    fields, args = foldlargs(((), allargs), Fields...) do (fields, allargs), x
+        if x isa StructSchema
             y, rest = reconstruct(f, x, allargs...)
             ((fields..., y), rest)
         else
             ((fields..., allargs[1]), Base.tail(allargs))
         end
     end
-    return f(obj, fields), args
+    return f(Constructor, fields), args
 end
 
 # Manually flatten broadcast to avoid unbroadcast MethodError:
 # https://github.com/FluxML/Zygote.jl/issues/313
-calling(obj::T) where T = @inline function(allargs...)
-    f, args = reconstruct(_reconstruct, obj, allargs...)
-    return f(args...)
-end
+calling(obj::T) where T =
+    let schema = _structschema(obj)
+        # Make sure to _not_ reference `obj` inside the closure.  It
+        # must not have non-isbit types (like arrays) as its members.
+        @inline function(allargs...)
+            f, args = reconstruct(_reconstruct, schema, allargs...)
+            return f(args...)
+        end
+    end
 
 @adjoint fieldvalues(obj::T) where T = fieldvalues(obj), function(v)
     (NamedTuple{fieldnames(T)}(v),)
