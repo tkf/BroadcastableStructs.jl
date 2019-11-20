@@ -85,6 +85,9 @@ end
 
 @inline _reconstruct(::Type{T}, fields) where T = constructorof(T)(fields...)
 
+@inline reconstruct(f, obj::BroadcastableStruct, allargs...) =
+    reconstruct(f, _structschema(obj), allargs...)
+
 @inline function reconstruct(f::F, ::StructSchema{Constructor, Fields}, allargs...) where {F, Constructor, Fields}
     fields, args = foldlargs(((), allargs), Fields...) do (fields, allargs), x
         if x isa StructSchema
